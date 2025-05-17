@@ -1,0 +1,6 @@
+[tool.semantic_release]
+version_source = "git"
+branch = "beta"
+
+# Optional configurations
+build = { type = "python", executable = "python setup.py sdist" }
