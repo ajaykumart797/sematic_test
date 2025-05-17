@@ -38,7 +38,7 @@ jobs:
 
       - name: Semantic Versioning (Python Semantic Release)
         # if: github.event_name == 'push'
-        uses: cycjimmy/semantic-release-action@v3
+        # uses: cycjimmy/semantic-release-action@v3
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         with:
