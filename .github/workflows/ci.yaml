@@ -1,4 +1,4 @@
-name: TIS AI reports
+name:  demo reports
 
 on:
   push:
