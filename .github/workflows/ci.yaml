@@ -1,4 +1,5 @@
-name: latest disoovery file image build
+
+name: Latest Discovery File Image Build
 
 on:
   push:
@@ -11,8 +12,7 @@ on:
 
 env:
   IMAGE_NAME: "tis-devops-api"
-  REGISTRY_NAME: "tisaiops.azurecr.io"
-  AZURE_USERNAME: "tisaiops"
+  DOCKER_USERNAME: "abhishek976772"
 
 jobs:
   build:
@@ -34,8 +34,8 @@ jobs:
           pip install pytest-asyncio
           pip install python-semantic-release
 
-      - name: Log in to Azure Container Registry
-        run: echo "${{ secrets.AZURE_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }} -u ${{ env.AZURE_USERNAME }} --password-stdin
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ env.DOCKER_USERNAME }} --password-stdin
 
       - name: Semantic Versioning (Python Semantic Release)
         if: github.event_name == 'push'
@@ -45,5 +45,5 @@ jobs:
       - name: Build and push Docker image
         if: steps.versioning.outputs.new_release_published == 'true'
         run: |
-          docker build -t ${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ steps.versioning.outputs.new_release_version }} .
-          docker push ${{ env.REGISTRY_NAME }}/${{ env.IMAGE_NAME }}:${{ steps.versioning.outputs.new_release_version }}
+          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.versioning.outputs.new_release_version }} .
+          docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.versioning.outputs.new_release_version }}
