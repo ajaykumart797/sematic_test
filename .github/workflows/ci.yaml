@@ -39,8 +39,11 @@ jobs:
 
       - name: Semantic Versioning (Python Semantic Release)
         if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           semantic-release publish
+
 
       - name: Build and push Docker image
         if: steps.versioning.outputs.new_release_published == 'true'
