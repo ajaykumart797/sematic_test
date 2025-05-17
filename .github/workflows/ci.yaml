@@ -1,20 +1,21 @@
-name: Latest Discovery File Image Build
+name: TIS AI reports
 
 on:
   push:
     branches: 
-      - master
       - main
+      - master
   pull_request:
-    branches: ["beta", "master"]
+    branches: ["main", "master"]
   workflow_dispatch:
 
 env:
   IMAGE_NAME: "tis-devops-api"
-  DOCKER_USERNAME: "abhishek976772"
+  DOCKER_USERNAME: "abhishek976772"  # Replace with your Docker Hub username
 
 jobs:
   build:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -29,25 +30,43 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest
-          pip install pytest-asyncio
-          pip install python-semantic-release
+
+      - name: Run tests
+        run: |
+          pytest tests/
+
+      - name: Semantic Versioning
+        uses: cycjimmy/semantic-release-action@v3
+        id: versioning
+        with:
+          branches: |
+            [
+              "master",
+              {
+                "name": "main",
+                "prerelease": true
+              }
+            ]
+          extra_plugins: |
+            conventional-changelog-eslint@4.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ env.DOCKER_USERNAME }} --password-stdin
-
-      - name: Semantic Versioning (Python Semantic Release)
-        # if: github.event_name == 'push'
-        uses: cycjimmy/semantic-release-action@v3
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        with:
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/git
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ env.DOCKER_USERNAME }} --password-stdin
 
       - name: Build and push Docker image
-        if: steps.semantic-release.outputs.new_release_published == 'true'
+        if: steps.versioning.outputs.new_release_published == 'true'
         run: |
-          docker build -t ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.semantic-release.outputs.new_release_version }} .
-          docker push ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.semantic-release.outputs.new_release_version }}
+          docker build -t docker.io/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.versioning.outputs.new_release_version }} .
+          docker push docker.io/${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ steps.versioning.outputs.new_release_version }}
+
+      - name: Deploy to DEV
+        if: steps.versioning.outputs.new_release_published == 'true' && github.ref == 'refs/heads/alpha'
+        run: |
+          pwsh -f GitHub.ps1 -token ${{ secrets.PAT }} -environment uat -version ${{ steps.versioning.outputs.new_release_version }}
+
+      - name: Deploy to UAT
+        if: steps.versioning.outputs.new_release_published == 'true' && github.ref == 'refs/heads/uat'
+        run: |
+          pwsh -f GitHub.ps1 -token ${{ secrets.PAT }} -environment uat -version ${{ steps.versioning.outputs.new_release_version }}
