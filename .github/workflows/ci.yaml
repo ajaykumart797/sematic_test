@@ -4,7 +4,7 @@ name: Latest Discovery File Image Build
 on:
   push:
     branches: 
-      - master
+      - main
       - beta
   pull_request:
     branches: ["beta", "master"]
